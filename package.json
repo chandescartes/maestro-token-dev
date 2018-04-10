@@ -1,0 +1,26 @@
+{
+  "name": "maestro-token-dev",
+  "version": "1.0.0",
+  "description": "Maestro Token Development",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://taegoo@github.com/maestro-project/maestro-token-dev.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maestro-project/maestro-token-dev/issues"
+  },
+  "homepage": "https://github.com/maestro-project/maestro-token-dev#readme",
+  "dependencies": {
+    "zeppelin-solidity": "1.8.0"
+  }
+}
