@@ -1,5 +1,5 @@
 var MaestroToken = artifacts.require("MaestroToken");
 
 module.exports = function(deployer) {
-  deployer.deploy(MaestroToken);
+    deployer.deploy(MaestroToken, 100, 60);
 };
