@@ -9,17 +9,19 @@ import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
  */
 contract MaestroToken is BurnableToken, MintableToken {
 
-    string public constant STANDARD = "ERC20"; // Not required, but recommended
-    string public constant NAME     = "Maestro Token";
-    string public constant SYMBOL   = "MAE";
-    uint8 public constant DECIMALS  = 18;      // 10**decimals will be applied for minimum divisible unit of token
+    string public constant standard = "ERC20"; // Not required, but recommended
+    string public constant name     = "Maestro Token";
+    string public constant symbol   = "MAE";
+    uint8 public constant decimals  = 18;      // {10 ** decimals} will be applied for minimum divisible unit of token
 
     uint256 public initialSupplyInTokens;   // Do not use this variable, use {initialSupply}
-    uint256 public initialSupply;           // {initialSupply = initialSupplyInTokens * 10 ** DECIMALS}
-    uint public lockupDuration;             // duration for company lock-up
+    uint256 public initialSupply;           // {initialSupply = initialSupplyInTokens * 10 ** decimals}
+    uint public lockupDuration;             // Duration for company lock-up
     uint public companyLockReleaseDate;
 
-    mapping (address => uint256) public lockedTokens;       // keeps number of locked-up tokens of each address
+    mapping(address => uint256) public lockedTokens;   // Keeps number of locked-up tokens of each address
+
+    event Lock(address _tokenHolder, uint256 _value);
 
     /**
      * Disallows transferring locked tokens
@@ -37,7 +39,7 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function MaestroToken(uint256 _initialSupplyInTokens, uint _lockupDurationInSeconds) public {
         initialSupplyInTokens = _initialSupplyInTokens;
-        initialSupply = initialSupplyInTokens = (10 ** uint256(DECIMALS));
+        initialSupply = initialSupplyInTokens.mul(10 ** uint256(decimals));
 
         balances[msg.sender] = initialSupply;  // Give the creator all initial tokens
 
@@ -66,9 +68,21 @@ contract MaestroToken is BurnableToken, MintableToken {
     }
 
     /**
+     * Increase amount of locked tokens of {_tokenHolder} by {_value}
+     * TODO: How do we restrict this function properly? Is {onlyOwner} correct?
+     */
+    function lockTokens(address _tokenHolder, uint256 _value) public onlyOwner {
+        require(lockedTokens[_tokenHolder].add(_value) <= balances[_tokenHolder]);
+
+        lockedTokens[_tokenHolder] = lockedTokens[_tokenHolder].add(_value);
+        emit Lock(_tokenHolder, _value);
+    }
+
+    /**
      * Enables admin to transfer for batch
      * Used by contract creator to distribute initial tokens to holders with lockup
-     * TODO: Check if whether any address is not equal to {address(0)}
+     * TODO: Check whether any address is not equal to {address(0)}
+     * TODO: Change parameters to {mapping(address => uint256)}
      */
     function adminBatchTransferWithLockup(address[] _recipients, uint[] _values) public onlyOwner returns (bool) {
         require(_recipients.length > 0 && _recipients.length == _values.length);
@@ -80,16 +94,16 @@ contract MaestroToken is BurnableToken, MintableToken {
         }
         require(total <= balances[msg.sender]);
 
+        // Subtract first? (reentrancy attack)
+        balances[msg.sender] = balances[msg.sender].sub(total);
+
         // Transfer to each {_recipient}
         for (uint j = 0; j < _recipients.length; j++) {
             balances[_recipients[j]] = balances[_recipients[j]].add(_values[j]);
             emit Transfer(msg.sender, _recipients[j], _values[j]);
 
-            lockedTokens[_recipients[j]] = _values[j];
+            lockTokens(_recipients[j], _values[j]);
         }
-
-        // TODO: Subtract first? (reentrancy attack)
-        balances[msg.sender] = balances[msg.sender].sub(total);
 
         return true;
     }

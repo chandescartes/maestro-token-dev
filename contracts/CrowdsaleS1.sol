@@ -13,7 +13,7 @@ import "./MaestroToken.sol";
  */
 contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
 
-    uint8 constant public DECIMALS = 18;
+    uint8 constant public decimals = 18;
 
     // Address of wallet to which tokens for company will be transfered
     // TODO: Initialize with constructor?
@@ -21,7 +21,7 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
 
     // Number of tokens for company-reserve
     // TODO: Initialize with constructor?
-    uint constant public numCompanyReserveTokens = 1000000 * (10 ** uint256(DECIMALS));
+    uint constant public numCompanyReserveTokens = 1000000 * (10 ** uint256(decimals));
 
     /**
      * Constructor
@@ -51,6 +51,27 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
     }
 
     /**
+     * Calculates bonus (30%)
+     */
+    function getBonus(uint256 _amount) internal pure returns (uint256) {
+        return _amount.div(10).mul(3);
+    }
+
+    /**
+     * Overrides parent contracts
+     * Extend parent behavior to add and lock up bonus
+     * {_tokenAmount} does not include bonus
+     */
+    function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
+        // TODO: lockup MaestroToken(token)
+        uint256 bonusAmount = getBonus(_tokenAmount);
+        uint256 tokenAmountWithBonus = _tokenAmount.add(bonusAmount);
+
+        _deliverTokens(_beneficiary, tokenAmountWithBonus);
+        MaestroToken(token).lockTokens(_beneficiary, _tokenAmount);
+    }
+
+    /**
      * Grant initial tokens to company members
      */
     function reserveInitialCompanyTokens() internal {
@@ -68,10 +89,10 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
         recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
 
         uint[] storage tokens;
-        tokens.push(100000 * (10 ** uint256(DECIMALS)));
-        tokens.push(100000 * (10 ** uint256(DECIMALS)));
-        tokens.push(100000 * (10 ** uint256(DECIMALS)));
-        tokens.push(100000 * (10 ** uint256(DECIMALS)));
+        tokens.push(100000 * (10 ** uint256(decimals)));
+        tokens.push(100000 * (10 ** uint256(decimals)));
+        tokens.push(100000 * (10 ** uint256(decimals)));
+        tokens.push(100000 * (10 ** uint256(decimals)));
 
         MaestroToken(token).adminBatchTransferWithLockup(recipients, tokens);
     }
