@@ -21,6 +21,8 @@ contract MaestroToken is BurnableToken, MintableToken {
 
     mapping(address => uint256) public lockedTokens;   // Keeps number of locked-up tokens of each address
 
+    address private crowdsaleS1Address;     // Address of S1 Crowdsale contract;
+
     event Lock(address _tokenHolder, uint256 _value);
 
     /**
@@ -33,9 +35,19 @@ contract MaestroToken is BurnableToken, MintableToken {
     }
 
     /**
+     * For calling methods only from the CrowdsaleS1 contract
+     */
+    modifier onlyCrowdsaleS1() {
+        require(msg.sender == crowdsaleS1Address);
+        _;
+    }
+
+    /**
      * Constructor
      * Second parameter's unit is in seconds for testing convenience
-     * TODO: change this parameter to a more appropriate one (months or years)
+     * TODO: Change this parameter to a more appropriate one (months or years)
+     * TODO: Does this initialize its parent's contructors,
+     *       or should we call it explicitly like in CrowdsaleS1?
      */
     function MaestroToken(uint256 _initialSupplyInTokens, uint _lockupDurationInSeconds) public {
         initialSupplyInTokens = _initialSupplyInTokens;
@@ -68,14 +80,41 @@ contract MaestroToken is BurnableToken, MintableToken {
     }
 
     /**
-     * Increase amount of locked tokens of {_tokenHolder} by {_value}
-     * TODO: How do we restrict this function properly? Is {onlyOwner} correct?
+     * Set address of CrowdsaleS1
      */
-    function lockTokens(address _tokenHolder, uint256 _value) public onlyOwner {
+    function setCrowdsaleS1Address(address _crowdsaleS1Address) public onlyOwner {
+        crowdsaleS1Address = _crowdsaleS1Address;
+    }
+
+    /**
+     * Increase amount of locked tokens of {_tokenHolder} by {_value}
+     */
+    function lockTokens(address _tokenHolder, uint256 _value) internal {
         require(lockedTokens[_tokenHolder].add(_value) <= balances[_tokenHolder]);
 
         lockedTokens[_tokenHolder] = lockedTokens[_tokenHolder].add(_value);
         emit Lock(_tokenHolder, _value);
+    }
+
+    /**
+     * Transfers an amount with bonus and locks up the bonus
+     * Called only from the CrowdsaleS1 contract
+     */
+    function processPurchaseWithBonus(
+        address _beneficiary, 
+        uint256 _amountWithBonus, 
+        uint256 _bonusAmount
+    ) 
+        public 
+        onlyCrowdsaleS1
+        returns (bool) 
+    {
+        require(_amountWithBonus >= _bonusAmount); // Bonus cannot be more than the amount with bonus included
+
+        transfer(_beneficiary, _amountWithBonus);
+        lockTokens(_beneficiary, _bonusAmount);
+
+        return true;
     }
 
     /**
@@ -84,7 +123,7 @@ contract MaestroToken is BurnableToken, MintableToken {
      * TODO: Check whether any address is not equal to {address(0)}
      * TODO: Change parameters to {mapping(address => uint256)}
      */
-    function adminBatchTransferWithLockup(address[] _recipients, uint[] _values) public onlyOwner returns (bool) {
+    function adminBatchTransferWithLockup(address[] _recipients, uint[] _values) public onlyCrowdsaleS1 returns (bool) {
         require(_recipients.length > 0 && _recipients.length == _values.length);
 
         // Check balance of sender is less than sum of values
@@ -94,14 +133,9 @@ contract MaestroToken is BurnableToken, MintableToken {
         }
         require(total <= balances[msg.sender]);
 
-        // Subtract first? (reentrancy attack)
-        balances[msg.sender] = balances[msg.sender].sub(total);
-
         // Transfer to each {_recipient}
         for (uint j = 0; j < _recipients.length; j++) {
-            balances[_recipients[j]] = balances[_recipients[j]].add(_values[j]);
-            emit Transfer(msg.sender, _recipients[j], _values[j]);
-
+            transfer(_recipients[j], _values[j]);
             lockTokens(_recipients[j], _values[j]);
         }
 

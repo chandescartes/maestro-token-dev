@@ -10,6 +10,7 @@ import "./MaestroToken.sol";
 
 /**
  * Maestro Crowdsale Season #1
+ * For this contract to work, balance of its address in MaestroToken must be set
  */
 contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
 
@@ -59,7 +60,7 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
 
     /**
      * Overrides parent contracts
-     * Extend parent behavior to add and lock up bonus
+     * Unlike parent contracts, it does NOT call internal {_deliverTokens} method
      * {_tokenAmount} does not include bonus
      */
     function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
@@ -67,8 +68,7 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
         uint256 bonusAmount = getBonus(_tokenAmount);
         uint256 tokenAmountWithBonus = _tokenAmount.add(bonusAmount);
 
-        _deliverTokens(_beneficiary, tokenAmountWithBonus);
-        MaestroToken(token).lockTokens(_beneficiary, _tokenAmount);
+        require(MaestroToken(token).processPurchaseWithBonus(_beneficiary, tokenAmountWithBonus, bonusAmount));
     }
 
     /**
