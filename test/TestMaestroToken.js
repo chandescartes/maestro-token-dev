@@ -19,6 +19,8 @@ contract("MaestroToken Test", async (accounts) => {
         let totalSupply = await instance.totalSupply.call();
         console.log("TOTAL_SUPPLY:  " + totalSupply);
         assert.equal(totalSupply, INITIAL_SUPPLY_IN_TOKENS * (10 ** 18));
+
+        // TODO: Add tests for new parameters
     });
 
     // it("should not allow non-owners access to methods", async () => {
@@ -35,11 +37,11 @@ contract("MaestroToken Test", async (accounts) => {
         let instance = await MaestroToken.deployed();
 
         let value = 9 * (10 ** 18);
-        let balance0 = (await instance.balanceOf(accounts[1])).toNumber();
+        let balance0 = (await instance.balanceOf.call(accounts[1])).toNumber();
         console.log(balance0);
         assert.equal(balance0, 0);
 
-        let transfer1 = await instance.transfer(accounts[1], value, {from: accounts[0]});
+        await instance.transfer(accounts[1], value, {from: accounts[0]});
 
         let balance1 = (await instance.balanceOf.call(accounts[1])).toNumber();
         console.log(balance1);
@@ -49,7 +51,8 @@ contract("MaestroToken Test", async (accounts) => {
         console.log(balance2);
     });
 
-    // TODO: test time-dependent functions
-    // TODO: test allowance
+    // TODO: Test time-dependent functions
+    // TODO: Test allowance
+    // TODO: Test requires
 
 });

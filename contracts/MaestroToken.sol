@@ -6,22 +6,23 @@ import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
 /**
  * The main contract for Maestro token
+ * TODO: Assign different lock up duration for each address ???
  */
 contract MaestroToken is BurnableToken, MintableToken {
 
-    string public constant standard = "ERC20"; // Not required, but recommended
+    string public constant standard = "ERC20";
     string public constant name     = "Maestro Token";
     string public constant symbol   = "MAE";
-    uint8 public constant decimals  = 18;      // {10 ** decimals} will be applied for minimum divisible unit of token
+    uint8 public constant decimals  = 18;
 
-    uint256 public initialSupplyInTokens;   // Do not use this variable, use {initialSupply}
-    uint256 public initialSupply;           // {initialSupply = initialSupplyInTokens * 10 ** decimals}
-    uint public lockupDuration;             // Duration for company lock-up
+    uint256 public initialSupply;
+    address public companyAddress;
+    uint256 public companyReserveAmount;
     uint public companyLockReleaseDate;
 
-    mapping(address => uint256) public lockedTokens;   // Keeps number of locked-up tokens of each address
+    address public crowdsaleS1Address;
 
-    address private crowdsaleS1Address;     // Address of S1 Crowdsale contract;
+    mapping(address => uint256) public lockedTokens;
 
     event Lock(address _tokenHolder, uint256 _value);
 
@@ -44,25 +45,47 @@ contract MaestroToken is BurnableToken, MintableToken {
 
     /**
      * Constructor
-     * Second parameter's unit is in seconds for testing convenience
-     * TODO: Change this parameter to a more appropriate one (months or years)
-     * TODO: Does this initialize its parent's contructors,
-     *       or should we call it explicitly like in CrowdsaleS1?
+     * Note that {_initialSupplyWithoutDecimals} is amount before multiplying by {10 ** decimals}
+     * For example, if {_initialSupplyWithoutDecimals == 999} then {initialSupply == 999 * (10 ** decimals)}
+     * This is so that we make sure the initial supply is divisible by {10 ** decimals}
+     * TODO: Should there be a company address, or is it unnecessary if we batch transfer?
      */
-    function MaestroToken(uint256 _initialSupplyInTokens, uint _lockupDurationInSeconds) public {
-        initialSupplyInTokens = _initialSupplyInTokens;
-        initialSupply = initialSupplyInTokens.mul(10 ** uint256(decimals));
+    function MaestroToken(
+        uint256 _initialSupplyWithoutDecimals, 
+        uint _lockupDurationInSeconds,
+        // address _companyAddress,
+        uint256 _companyReserveWithoutDecimals
+    ) 
+        public 
+    {
+        // require(_companyAddress != address(0));
+        require(_initialSupplyWithoutDecimals > _companyReserveWithoutDecimals);
+
+        initialSupply = _initialSupplyWithoutDecimals.mul(10 ** uint256(decimals));
 
         balances[msg.sender] = initialSupply;  // Give the creator all initial tokens
+        emit Transfer(address(0), msg.sender, initialSupply);
 
         // In BasicToken.sol
         // Current total supply of tokens, can be increased by mint() or decreased by burn()
+        // {totalSupply_ <= initialSupply}
         totalSupply_ = initialSupply;
 
-        emit Transfer(address(0), msg.sender, initialSupply);
-
         // specify release date of lock-up
-        companyLockReleaseDate = now + _lockupDurationInSeconds; // NOTE: unit of {now} is seconds
+        companyLockReleaseDate = now + (_lockupDurationInSeconds * 1 seconds); // NOTE: unit of {now} is seconds
+
+        // companyAddress = _companyAddress;
+        companyReserveAmount = _companyReserveWithoutDecimals.mul(10 ** uint256(decimals));
+
+        // transfer(companyAddress, companyReserveAmount);
+        // lockTokens(companyAddress, companyReserveAmount);
+    }
+
+    /**
+     * Returns lockup of {_owner}
+     */
+    function getLockup(address _owner) public view returns (uint256) {
+        return lockedTokens[_owner];
     }
 
     /**

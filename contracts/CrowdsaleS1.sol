@@ -16,14 +16,6 @@ contract CrowdsaleS1 is Crowdsale, CappedCrowdsale, TimedCrowdsale {
 
     uint8 constant public decimals = 18;
 
-    // Address of wallet to which tokens for company will be transfered
-    // TODO: Initialize with constructor?
-    address constant public COMPANY_RESERVE_ADDRESS = 0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF;
-
-    // Number of tokens for company-reserve
-    // TODO: Initialize with constructor?
-    uint constant public numCompanyReserveTokens = 1000000 * (10 ** uint256(decimals));
-
     /**
      * Constructor
      * Variables from inherited contracts
@@ -32,23 +24,19 @@ contract CrowdsaleS1 is Crowdsale, CappedCrowdsale, TimedCrowdsale {
      * {openingTime, closingTime} from TimedCrowdsale.sol
      */
     function CrowdsaleS1(
-        uint256 _openingTime,   // Opening time in timestamp
-        uint256 _closingTime,   // Closing time in timestamp
-        uint256 _rate,          // How many token units a buyer gets per wei
-        address _wallet,        // Address where funds are collected
-        uint256 _cap,           // Max amount of wei to be contributed
-        ERC20 _token            // The token being sold
-        // uint256 _goal
+        uint256 _openingTime,           // Opening time in timestamp
+        uint256 _closingTime,           // Closing time in timestamp
+        uint256 _rate,                  // How many token units a buyer gets per wei
+        address _wallet,                // Address where funds are collected
+        uint256 _cap,                   // Max amount of wei to be contributed
+        ERC20 _token                    // The token being sold
     )
         public
         Crowdsale(_rate, _wallet, _token)
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
     {
-        // The goal needs to less than or equal to the cap
-        // require(_goal <= _cap);
-
-        // reserveInitialCompanyTokens();
+        // TODO: Should there really be nothing here
     }
 
     /**
@@ -81,27 +69,27 @@ contract CrowdsaleS1 is Crowdsale, CappedCrowdsale, TimedCrowdsale {
 
     /**
      * Grant initial tokens to company members
+     * TODO: Move this to MaestroToken as it does not pertain to CrowdsaleS1 !!!
      */
-    function reserveInitialCompanyTokens() internal {
-        // Company-reserve tokens
-        MaestroToken(token).transfer(COMPANY_RESERVE_ADDRESS, numCompanyReserveTokens);
+    // function reserveInitialCompanyTokens() internal {
+    //     // Company-reserve tokens
+    //     MaestroToken(token).transfer(companyAddress, numCompanyReserveTokens);
 
-        //
-        // TODO: Distribute initial tokens to partners and creators
-        // TODO: Use {memory} instead of {storage}?
-        //
-        address[] storage recipients;
-        recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
-        recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
-        recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
-        recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
+    //     //
+    //     // TODO: Distribute initial tokens to partners and creators
+    //     //
+    //     address[] storage recipients;
+    //     recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
+    //     recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
+    //     recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
+    //     recipients.push(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF);
 
-        uint[] storage tokens;
-        tokens.push(100000 * (10 ** uint256(decimals)));
-        tokens.push(100000 * (10 ** uint256(decimals)));
-        tokens.push(100000 * (10 ** uint256(decimals)));
-        tokens.push(100000 * (10 ** uint256(decimals)));
+    //     uint[] storage tokens;
+    //     tokens.push(100000 * (10 ** uint256(decimals)));
+    //     tokens.push(100000 * (10 ** uint256(decimals)));
+    //     tokens.push(100000 * (10 ** uint256(decimals)));
+    //     tokens.push(100000 * (10 ** uint256(decimals)));
 
-        require(MaestroToken(token).adminBatchTransferWithLockup(recipients, tokens));
-    }
+    //     require(MaestroToken(token).adminBatchTransferWithLockup(recipients, tokens));
+    // }
 }
