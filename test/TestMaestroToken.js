@@ -1,6 +1,6 @@
 const MaestroToken = artifacts.require("MaestroToken");
 
-contract('MaestroToken Test', async (accounts) => {
+contract("MaestroToken Test", async (accounts) => {
 
     const INITIAL_SUPPLY_IN_TOKENS = 999;
     const LOCKUP_DURATION_IN_SECONDS = 60;
@@ -35,19 +35,21 @@ contract('MaestroToken Test', async (accounts) => {
         let instance = await MaestroToken.deployed();
 
         let value = 9 * (10 ** 18);
-        let balance0 = (await instance.balanceOf.call(accounts[1])).toNumber();
+        let balance0 = (await instance.balanceOf(accounts[1])).toNumber();
         console.log(balance0);
         assert.equal(balance0, 0);
 
-        let transfer1 = await instance.transfer.call(accounts[1], value);
-        console.log(transfer1);
-        assert.equal(transfer1, true);
+        let transfer1 = await instance.transfer(accounts[1], value, {from: accounts[0]});
 
         let balance1 = (await instance.balanceOf.call(accounts[1])).toNumber();
         console.log(balance1);
-        // assert.equal(balance1, value);
+        assert.equal(balance1, value);
 
         let balance2 = (await instance.balanceOf.call(accounts[0])).toNumber();
         console.log(balance2);
     });
+
+    // TODO: test time-dependent functions
+    // TODO: test allowance
+
 });

@@ -12,7 +12,7 @@ import "./MaestroToken.sol";
  * Maestro Crowdsale Season #1
  * For this contract to work, balance of its address in MaestroToken must be set
  */
-contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
+contract CrowdsaleS1 is Crowdsale, CappedCrowdsale, TimedCrowdsale {
 
     uint8 constant public decimals = 18;
 
@@ -41,14 +41,14 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
         // uint256 _goal
     )
         public
-        Crowdsale(_rate, _wallet, MaestroToken(_token))
+        Crowdsale(_rate, _wallet, _token)
         CappedCrowdsale(_cap)
         TimedCrowdsale(_openingTime, _closingTime)
     {
         // The goal needs to less than or equal to the cap
         // require(_goal <= _cap);
 
-        reserveInitialCompanyTokens();
+        // reserveInitialCompanyTokens();
     }
 
     /**
@@ -56,6 +56,14 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
      */
     function getBonus(uint256 _amount) internal pure returns (uint256) {
         return _amount.div(10).mul(3);
+    }  
+
+    /**
+     * Overrides parent contracts to combine implementation of CappedCrowdsale and TimedCrowdsale
+     */
+    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal onlyWhileOpen {
+        Crowdsale._preValidatePurchase(_beneficiary, _weiAmount);
+        require(weiRaised.add(_weiAmount) <= cap);
     }
 
     /**
@@ -94,6 +102,6 @@ contract CrowdsaleS1 is CappedCrowdsale, TimedCrowdsale {
         tokens.push(100000 * (10 ** uint256(decimals)));
         tokens.push(100000 * (10 ** uint256(decimals)));
 
-        MaestroToken(token).adminBatchTransferWithLockup(recipients, tokens);
+        require(MaestroToken(token).adminBatchTransferWithLockup(recipients, tokens));
     }
 }

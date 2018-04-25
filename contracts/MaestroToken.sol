@@ -121,7 +121,6 @@ contract MaestroToken is BurnableToken, MintableToken {
      * Enables admin to transfer for batch
      * Used by contract creator to distribute initial tokens to holders with lockup
      * TODO: Check whether any address is not equal to {address(0)}
-     * TODO: Change parameters to {mapping(address => uint256)}
      */
     function adminBatchTransferWithLockup(address[] _recipients, uint[] _values) public onlyCrowdsaleS1 returns (bool) {
         require(_recipients.length > 0 && _recipients.length == _values.length);
