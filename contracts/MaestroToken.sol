@@ -3,10 +3,10 @@ pragma solidity ^0.4.21;
 import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
+import "./MaestroCrowdsale.sol";
 
 /**
  * The main contract for Maestro token
- * TODO: Assign different lock up duration for each address ???
  */
 contract MaestroToken is BurnableToken, MintableToken {
 
@@ -16,30 +16,41 @@ contract MaestroToken is BurnableToken, MintableToken {
     uint8 public constant decimals  = 18;
 
     uint256 public initialSupply;
-    address public companyAddress;
-    uint256 public companyReserveAmount;
-    uint public companyLockReleaseDate;
+    // {uint256 totalSupply_} is also a global variable
 
-    address public crowdsaleS1Address;
+    /* Bonus rates */
+    uint public constant BONUS_S1 = 30;
+    uint public constant BONUS_S2 = 10;
+    uint public constant BONUS_S3 = 0;
 
-    mapping(address => uint256) public lockedTokens;
+    /* Crowdsale addresses */
+    address internal crowdsaleS1Address;
+    address internal crowdsaleS2Address;
+    address internal crowdsaleS3Address;
 
-    event Lock(address _tokenHolder, uint256 _value);
+    /* Lockup durations and release dates */
+    uint public constant LOCKUP_DURATION_S1 = 1 years;
+    uint public constant LOCKUP_DURATION_S2 = 1 years;
+    uint public releaseDateS1;
+    uint public releaseDateS2;
+
+    mapping(address => uint256) internal lockupS1;
+    mapping(address => uint256) internal lockupS2;
+
+    /* Events */
+    event Lock(address indexed _tokenHolder, uint256 _value, uint _crowdsaleNumber);
 
     /**
      * Disallows transferring locked tokens
+     * TODO: add S2 logic
      */
     modifier checkLockup(address _from, uint256 _value) {
-        if (companyLockReleaseDate > now)
-            require(balances[_from].sub(_value) >= lockedTokens[_from]);
-        _;
-    }
+        if (now < releaseDateS1)
+            require(_value.add(lockupS1[_from]).add(lockupS2[_from]) <= balances[_from]);
 
-    /**
-     * For calling methods only from the CrowdsaleS1 contract
-     */
-    modifier onlyCrowdsaleS1() {
-        require(msg.sender == crowdsaleS1Address);
+        else if (now < releaseDateS2)
+            require(_value.add(lockupS2[_from]) <= balances[_from]);
+
         _;
     }
 
@@ -48,119 +59,204 @@ contract MaestroToken is BurnableToken, MintableToken {
      * Note that {_initialSupplyWithoutDecimals} is amount before multiplying by {10 ** decimals}
      * For example, if {_initialSupplyWithoutDecimals == 999} then {initialSupply == 999 * (10 ** decimals)}
      * This is so that we make sure the initial supply is divisible by {10 ** decimals}
-     * TODO: Should there be a company address, or is it unnecessary if we batch transfer?
      */
-    function MaestroToken(
-        uint256 _initialSupplyWithoutDecimals, 
-        uint _lockupDurationInSeconds,
-        // address _companyAddress,
-        uint256 _companyReserveWithoutDecimals
-    ) 
-        public 
-    {
-        // require(_companyAddress != address(0));
-        require(_initialSupplyWithoutDecimals > _companyReserveWithoutDecimals);
-
+    function MaestroToken(uint256 _initialSupplyWithoutDecimals) public {
         initialSupply = _initialSupplyWithoutDecimals.mul(10 ** uint256(decimals));
-
-        balances[msg.sender] = initialSupply;  // Give the creator all initial tokens
-        emit Transfer(address(0), msg.sender, initialSupply);
 
         // In BasicToken.sol
         // Current total supply of tokens, can be increased by mint() or decreased by burn()
-        // {totalSupply_ <= initialSupply}
         totalSupply_ = initialSupply;
 
-        // specify release date of lock-up
-        companyLockReleaseDate = now + (_lockupDurationInSeconds * 1 seconds); // NOTE: unit of {now} is seconds
-
-        // companyAddress = _companyAddress;
-        companyReserveAmount = _companyReserveWithoutDecimals.mul(10 ** uint256(decimals));
-
-        // transfer(companyAddress, companyReserveAmount);
-        // lockTokens(companyAddress, companyReserveAmount);
+        balances[msg.sender] = initialSupply;  // Give the creator all initial tokens
+        emit Transfer(address(0), msg.sender, initialSupply);
     }
 
-    /**
-     * Returns lockup of {_owner}
-     */
-    function getLockup(address _owner) public view returns (uint256) {
-        return lockedTokens[_owner];
-    }
+    /*************************/
+    /*                       */
+    /*  Overriden Functions  */
+    /*                       */
+    /*************************/
 
     /**
-     * Overrides BasicToken.transfer()
+     * Override BasicToken.transfer()
      */
     function transfer(address _to, uint256 _value) public checkLockup(msg.sender, _value) returns (bool) {
         return super.transfer(_to, _value);
     }
 
     /**
-     * Overrides StandardToken.transferFrom()
+     * Override StandardToken.transferFrom()
      */
     function transferFrom(address _from, address _to, uint256 _value) public checkLockup(_from, _value) returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
 
+    /*************************/
+    /*                       */
+    /*    Other Functions    */
+    /*                       */
+    /*************************/
+
+    /**
+     * Return S1 lockup of sender
+     */
+    function getLockupS1() public view returns (uint256) {
+        return lockupS1[msg.sender];
+    }
+
+    /**
+     * Return S1 lockup of {_owner} - can only be called by owner
+     */
+    function getLockupS1OnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+        return lockupS1[_owner];
+    }
+
+    /**
+     * Return S2 lockup of sender
+     */
+    function getLockupS2() public view returns (uint256) {
+        return lockupS2[msg.sender];
+    }
+
+    /**
+     * Return S2 lockup of {_owner} - can only be called by owner
+     */
+    function getLockupS2OnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+        return lockupS2[_owner];
+    }
+
+    /**
+     * Return address of CrowdsaleS1 - can only be called by owner
+     */
+    function getCrowdsaleS1Address() public view onlyOwner returns (address) {
+        return crowdsaleS1Address;
+    }
+
+    /**
+     * Return address of CrowdsaleS2 - can only be called by owner
+     */
+    function getCrowdsaleS2Address() public view onlyOwner returns (address) {
+        return crowdsaleS2Address;
+    }
+
+    /**
+     * Return address of CrowdsaleS3 - can only be called by owner
+     */
+    function getCrowdsaleS3Address() public view onlyOwner returns (address) {
+        return crowdsaleS3Address;
+    }
+
+    // TODO: What happens when we input wrong address and need to revert?
     /**
      * Set address of CrowdsaleS1
      */
-    function setCrowdsaleS1Address(address _crowdsaleS1Address) public onlyOwner {
-        crowdsaleS1Address = _crowdsaleS1Address;
+    function setCrowdsaleS1(address _address, uint256 _amount) public onlyOwner {
+        require(_address != address(0));
+
+        crowdsaleS1Address = _address;
+        releaseDateS1 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S1;
+        transfer(crowdsaleS1Address, _amount);
+    }
+
+    /**
+     * Set address of CrowdsaleS2
+     */
+    function setCrowdsaleS2(address _address, uint256 _amount) public onlyOwner {
+        require(_address != address(0));
+
+        crowdsaleS2Address = _address;
+        releaseDateS2 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S2;
+        transfer(crowdsaleS2Address, _amount);
+    }
+
+    /**
+     * Set address of CrowdsaleS3
+     */
+    function setCrowdsaleS3(address _address, uint256 _amount) public onlyOwner {
+        require(_address != address(0));
+
+        crowdsaleS3Address = _address;
+        transfer(crowdsaleS3Address, _amount);
+    }
+
+    /**
+     * Get crowdsale number, return 0 otherwise
+     */
+    function getCrowdsaleNumber(address _sender) internal view returns (uint) {
+        if (_sender == crowdsaleS1Address)
+            return 1;
+
+        if (_sender == crowdsaleS2Address)
+            return 2;
+
+        if (_sender == crowdsaleS3Address)
+            return 3;
+
+        return 0;
+    }
+
+    /**
+     * Calculates bonus according to season
+     * Crowdsale number must be 1, 2, or 3
+     */
+    function calculateBonus(uint256 _amount, uint _crowdsaleNumber) internal pure returns (uint256) {
+        if (_crowdsaleNumber == 1)
+            return _amount.div(100).mul(BONUS_S1);
+
+        if (_crowdsaleNumber == 2)
+            return _amount.div(100).mul(BONUS_S2);
+
+        if (_crowdsaleNumber == 3)
+            return 0;
+
+        assert(false);
     }
 
     /**
      * Increase amount of locked tokens of {_tokenHolder} by {_value}
+     * Crowdsale number must be 1, 2, or 3
      */
-    function lockTokens(address _tokenHolder, uint256 _value) internal {
-        require(lockedTokens[_tokenHolder].add(_value) <= balances[_tokenHolder]);
+    function lockTokens(address _tokenHolder, uint256 _value, uint _crowdsaleNumber) internal {
+        if (_crowdsaleNumber == 1) {
+            // Lockup amount cannot be more than balance (lockupS2 doesn't necessarily have to be checked)
+            require(lockupS1[_tokenHolder].add(lockupS2[_tokenHolder]).add(_value) <= balances[_tokenHolder]);
 
-        lockedTokens[_tokenHolder] = lockedTokens[_tokenHolder].add(_value);
-        emit Lock(_tokenHolder, _value);
+            // Add lock up and emit event
+            lockupS1[_tokenHolder] = lockupS1[_tokenHolder].add(_value);
+            emit Lock(_tokenHolder, _value, _crowdsaleNumber);
+        }
+
+        else if (_crowdsaleNumber == 2) {
+            // Lockup amount cannot be more than balance
+            require(lockupS1[_tokenHolder].add(lockupS2[_tokenHolder]).add(_value) <= balances[_tokenHolder]);
+
+            // Add lockup and emit event
+            lockupS2[_tokenHolder] = lockupS2[_tokenHolder].add(_value);
+            emit Lock(_tokenHolder, _value, _crowdsaleNumber);
+        }
+
+        else if (_crowdsaleNumber == 3) {
+            return;
+        }
+
+        assert(false);
     }
 
     /**
      * Transfers an amount with bonus and locks up the bonus
      * Called only from the CrowdsaleS1 contract
      */
-    function processPurchaseWithBonus(
-        address _beneficiary, 
-        uint256 _amountWithBonus, 
-        uint256 _bonusAmount
-    ) 
-        public 
-        onlyCrowdsaleS1
-        returns (bool) 
-    {
-        require(_amountWithBonus >= _bonusAmount); // Bonus cannot be more than the amount with bonus included
+    function buyTokensFromCrowdsale(address _beneficiary, uint256 _amount) public returns (bool) {
+        uint crowdsaleNumber = getCrowdsaleNumber(msg.sender);
+        require(crowdsaleNumber != 0);
 
-        transfer(_beneficiary, _amountWithBonus);
-        lockTokens(_beneficiary, _bonusAmount);
+        uint256 bonus = calculateBonus(_amount, crowdsaleNumber);
+        uint256 amountWithBonus = _amount.add(bonus);
+
+        transfer(_beneficiary, amountWithBonus);
+        lockTokens(_beneficiary, bonus, crowdsaleNumber);
 
         return true;
     }
 
-    /**
-     * Enables admin to transfer for batch
-     * Used by contract creator to distribute initial tokens to holders with lockup
-     * TODO: Check whether any address is not equal to {address(0)}
-     */
-    function adminBatchTransferWithLockup(address[] _recipients, uint[] _values) public onlyCrowdsaleS1 returns (bool) {
-        require(_recipients.length > 0 && _recipients.length == _values.length);
-
-        // Check balance of sender is less than sum of values
-        uint total = 0;
-        for (uint i = 0; i < _values.length; i++) {
-            total = total.add(_values[i]);
-        }
-        require(total <= balances[msg.sender]);
-
-        // Transfer to each {_recipient}
-        for (uint j = 0; j < _recipients.length; j++) {
-            transfer(_recipients[j], _values[j]);
-            lockTokens(_recipients[j], _values[j]);
-        }
-
-        return true;
-    }
 }

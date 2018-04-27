@@ -1,11 +1,17 @@
-var MaestroToken = artifacts.require("MaestroToken");
-const CrowdsaleS1 = artifacts.require("CrowdsaleS1");
+const MaestroToken = artifacts.require("MaestroToken");
+const MaestroCrowdsale = artifacts.require("MaestroCrowdsale");
 
 module.exports = function(deployer, network, accounts) {
-    const latest = web3.eth.getBlock('latest').timestamp;
-    // const cap = web3.toWei(4000, 'ether');
+    const initialSupplyWithoutDecimals = 999;
 
-    deployer.deploy(MaestroToken, 999, 60, 1).then(function() {
-        return deployer.deploy(CrowdsaleS1, latest + 1, latest + (6000000 * 60), 1000, accounts[2], 4 * 10**18, MaestroToken.address);
+    const latest = web3.eth.getBlock('latest').timestamp;
+    const openingTime = latest + 1;
+    const closingTime = openingTime + (1000 * 60); // One minute
+    const rate = 1000;
+    const wallet = accounts[2];
+    const cap = 10 * (10 ** 18); // Ten ether
+
+    deployer.deploy(MaestroToken, initialSupplyWithoutDecimals).then(function() {
+        return deployer.deploy(MaestroCrowdsale, openingTime, closingTime, rate, wallet, cap, MaestroToken.address);
     });
 };
