@@ -61,6 +61,6 @@ contract MaestroCrowdsale is Crowdsale, CappedCrowdsale, FinalizableCrowdsale {
      * Override from FinalizableCrowdsale to include burning of remaining tokens
      */
     function finalization() internal {
-        // TODO
+        require(MaestroToken(token).burnRemainingTokensFromCrowdsale());
     }
 }

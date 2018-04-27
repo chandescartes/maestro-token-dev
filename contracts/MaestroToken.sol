@@ -259,4 +259,17 @@ contract MaestroToken is BurnableToken, MintableToken {
         return true;
     }
 
+    /**
+     * Burns remaining balance that crowdsale has
+     * Called when crowdsale ends
+     */
+    function burnRemainingTokensFromCrowdsale() public returns (bool) {
+        uint crowdsaleNumber = getCrowdsaleNumber(msg.sender);
+        require(crowdsaleNumber != 0);
+
+        uint256 balance = balances[msg.sender];
+        burn(balance);
+
+        return true;
+    }
 }
