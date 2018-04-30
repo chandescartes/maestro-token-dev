@@ -12,7 +12,7 @@ contract MaestroToken is BurnableToken, MintableToken {
 
     string public constant standard = "ERC20";
     string public constant name     = "Maestro Token";
-    string public constant symbol   = "MAE";
+    string public constant symbol   = "MAS";
     uint8 public constant decimals  = 18;
 
     uint256 public initialSupply;
