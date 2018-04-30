@@ -13,7 +13,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
     let CLOSING_TIME;
     const RATE = 1000;
     const WALLET = accounts[2];
-    const CAP = 10 * (10 ** 18);
+    const CAP = 3 * (10 ** 18);
 
     let maestroToken;
     let maestroCrowdsale;
@@ -55,8 +55,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
 
         const RELEASE_DATE = OPENING_TIME + (60 * 60 * 24 * 365);
 
-        const CROWDSALE_AMOUNT_IN_WEI = 3 * (10 ** 18);
-        const CROWDSALE_AMOUNT = CROWDSALE_AMOUNT_IN_WEI * RATE * 13 / 10;
+        const CROWDSALE_AMOUNT = CAP * RATE * 13 / 10;
 
         const BUY_AMOUNT_IN_WEI = 1 * (10 ** 18);
         const TOKEN_AMOUNT_WITHOUT_BONUS = BUY_AMOUNT_IN_WEI * RATE;
@@ -81,7 +80,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const TOTAL_SUPPLY_FINAL = INITIAL_SUPPLY - (CROWDSALE_AMOUNT - TOKEN_AMOUNT);
 
         // Set crowdsale
-        await maestroToken.setCrowdsaleS1(CROWDSALE, CROWDSALE_AMOUNT);
+        await maestroToken.setCrowdsaleS1(CROWDSALE);
         let releaseDate = (await maestroToken.releaseDateS1.call()).toNumber();
         assert.equal(releaseDate, RELEASE_DATE);
 
@@ -151,8 +150,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
 
         const RELEASE_DATE = OPENING_TIME + (60 * 60 * 24 * 365);
 
-        const CROWDSALE_AMOUNT_IN_WEI = 3 * (10 ** 18);
-        const CROWDSALE_AMOUNT = CROWDSALE_AMOUNT_IN_WEI * RATE * 11 / 10;
+        const CROWDSALE_AMOUNT = CAP * RATE * 11 / 10;
 
         const BUY_AMOUNT_IN_WEI = 1 * (10 ** 18);
         const TOKEN_AMOUNT_WITHOUT_BONUS = BUY_AMOUNT_IN_WEI * RATE;
@@ -177,7 +175,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const TOTAL_SUPPLY_FINAL = INITIAL_SUPPLY - (CROWDSALE_AMOUNT - TOKEN_AMOUNT);
 
         // Set crowdsale
-        await maestroToken.setCrowdsaleS2(CROWDSALE, CROWDSALE_AMOUNT);
+        await maestroToken.setCrowdsaleS2(CROWDSALE);
         let releaseDate = (await maestroToken.releaseDateS2.call()).toNumber();
         assert.equal(releaseDate, RELEASE_DATE);
 
@@ -245,8 +243,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const OTHER = accounts[3];
         const CROWDSALE = await maestroCrowdsale.address;
 
-        const CROWDSALE_AMOUNT_IN_WEI = 3 * (10 ** 18);
-        const CROWDSALE_AMOUNT = CROWDSALE_AMOUNT_IN_WEI * RATE;
+        const CROWDSALE_AMOUNT = CAP * RATE;
 
         const BUY_AMOUNT_IN_WEI = 1 * (10 ** 18);
         const TOKEN_AMOUNT_WITHOUT_BONUS = BUY_AMOUNT_IN_WEI * RATE;
@@ -271,7 +268,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const TOTAL_SUPPLY_FINAL = INITIAL_SUPPLY - (CROWDSALE_AMOUNT - TOKEN_AMOUNT);
 
         // Set crowdsale
-        await maestroToken.setCrowdsaleS3(CROWDSALE, CROWDSALE_AMOUNT);
+        await maestroToken.setCrowdsaleS3(CROWDSALE);
 
         let ownerBalanceBefore = (await maestroToken.balanceOf.call(OWNER)).toNumber();
         assert.equal(ownerBalanceBefore, OWNER_BALANCE_BEFORE);

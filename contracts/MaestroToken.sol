@@ -150,33 +150,42 @@ contract MaestroToken is BurnableToken, MintableToken {
     /**
      * Set address of CrowdsaleS1
      */
-    function setCrowdsaleS1(address _address, uint256 _amount) public onlyOwner {
+    function setCrowdsaleS1(address _address) public onlyOwner {
         require(_address != address(0));
 
         crowdsaleS1Address = _address;
         releaseDateS1 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S1;
-        transfer(crowdsaleS1Address, _amount);
+        uint256 cap = MaestroCrowdsale(_address).cap();
+        uint256 rate = MaestroCrowdsale(_address).rate();
+        uint256 tokenAmount = cap.mul(rate).div(100).mul(BONUS_S1 + 100);
+        transfer(crowdsaleS1Address, tokenAmount);
     }
 
     /**
      * Set address of CrowdsaleS2
      */
-    function setCrowdsaleS2(address _address, uint256 _amount) public onlyOwner {
+    function setCrowdsaleS2(address _address) public onlyOwner {
         require(_address != address(0));
 
         crowdsaleS2Address = _address;
         releaseDateS2 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S2;
-        transfer(crowdsaleS2Address, _amount);
+        uint256 cap = MaestroCrowdsale(_address).cap();
+        uint256 rate = MaestroCrowdsale(_address).rate();
+        uint256 tokenAmount = cap.mul(rate).div(100).mul(BONUS_S2 + 100);
+        transfer(crowdsaleS2Address, tokenAmount);
     }
 
     /**
      * Set address of CrowdsaleS3
      */
-    function setCrowdsaleS3(address _address, uint256 _amount) public onlyOwner {
+    function setCrowdsaleS3(address _address) public onlyOwner {
         require(_address != address(0));
 
         crowdsaleS3Address = _address;
-        transfer(crowdsaleS3Address, _amount);
+        uint256 cap = MaestroCrowdsale(_address).cap();
+        uint256 rate = MaestroCrowdsale(_address).rate();
+        uint256 tokenAmount = cap.mul(rate);
+        transfer(crowdsaleS3Address, tokenAmount);
     }
 
     /**
