@@ -2,9 +2,6 @@ pragma solidity ^0.4.21;
 
 import "zeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "zeppelin-solidity/contracts/crowdsale/distribution/FinalizableCrowdsale.sol";
-// import "zeppelin-solidity/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
-// import "zeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
-// import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
 import "./MaestroToken.sol";
 
@@ -44,8 +41,8 @@ contract MaestroCrowdsale is Crowdsale, CappedCrowdsale, FinalizableCrowdsale {
      * Override parent contracts to combine implementation of CappedCrowdsale and TimedCrowdsale
      */
     function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal onlyWhileOpen {
-        Crowdsale._preValidatePurchase(_beneficiary, _weiAmount);
         require(weiRaised.add(_weiAmount) <= cap);
+        Crowdsale._preValidatePurchase(_beneficiary, _weiAmount);   
     }
 
     /**

@@ -238,8 +238,9 @@ contract MaestroToken is BurnableToken, MintableToken {
         else if (_crowdsaleNumber == 3) {
             return;
         }
-
-        assert(false);
+        else {
+            assert(false);
+        }
     }
 
     /**

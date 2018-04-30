@@ -2,7 +2,7 @@ const MaestroToken = artifacts.require("MaestroToken");
 
 contract("MaestroToken Test", async (accounts) => {
 
-    const INITIAL_SUPPLY_WITHOUT_DECIMALS = 999;
+    const INITIAL_SUPPLY_WITHOUT_DECIMALS = 9999;
     const INITIAL_SUPPLY = INITIAL_SUPPLY_WITHOUT_DECIMALS * (10 ** 18);
 
     let maestroToken;
@@ -12,8 +12,9 @@ contract("MaestroToken Test", async (accounts) => {
     });
 
     it("should call constructor correctly", async () => {
+        const OWNER = accounts[0]
         let owner = await maestroToken.owner.call();
-        assert.equal(owner, accounts[0]);
+        assert.equal(owner, OWNER);
 
         let initialSupply = (await maestroToken.initialSupply.call()).toNumber();
         assert.equal(initialSupply, INITIAL_SUPPLY);
@@ -24,16 +25,6 @@ contract("MaestroToken Test", async (accounts) => {
         let totalSupply = (await maestroToken.totalSupply.call()).toNumber();
         assert.equal(totalSupply, INITIAL_SUPPLY);
     });
-
-    // it("should not allow non-owners access to methods", async () => {
-    //     let maestroToken = await MaestroToken.deployed();
-
-    //     let res1 = maestroToken.processPurchaseWithBonus.call(accounts[0], 100, 50, {from: accounts[1]});
-    //     assert.equal(res1, false);
-
-    //     let res2 = maestroToken.adminBatchTransferWithLockup.call([], [], {from: accounts[1]});
-    //     assert.equal(res1, false);
-    // });
 
     it("should transfer values properly", async () => {
         const SENDER = accounts[0];
