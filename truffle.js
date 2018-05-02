@@ -20,7 +20,7 @@ module.exports = {
 			network_id: "*",
 			// Need to set gas limit between "out of gas limit" and "exceeding block gas limit"
 			// Default is 4712388, which eventually causes "exceeds block gas limit"
-			gas: 4600000
+			gas: 4700000
 
 		}
     }
