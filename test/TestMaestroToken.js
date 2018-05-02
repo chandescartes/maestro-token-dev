@@ -105,6 +105,56 @@ contract("MaestroToken Test", async (accounts) => {
         assert.equal(receiverBalanceAfterTransfer, RECEIVER_BALANCE_AFTER_TRANSFER);
     });
 
+    it("should transfer and lock values properly", async () => {
+        const OWNER = accounts[0];
+        const MEMBER = accounts[1];
+
+        const VALUE = 9 * (10 ** 18);
+
+        const OWNER_BALANCE_BEFORE = INITIAL_SUPPLY;
+        const MEMBER_BALANCE_BEFORE = 0;
+        const MEMBER_LOCKUP_BEFORE = 0;
+
+        const OWNER_BALANCE_AFTER_1 = INITIAL_SUPPLY - VALUE;
+        const MEMBER_BALANCE_AFTER_1 = VALUE;
+        const MEMBER_LOCKUP_AFTER_1 = VALUE;
+
+        const OWNER_BALANCE_AFTER_2 = INITIAL_SUPPLY - (VALUE * 2);
+        const MEMBER_BALANCE_AFTER_2 = VALUE * 2;
+        const MEMBER_LOCKUP_AFTER_2 = VALUE * 2;
+
+        let ownerBalanceBefore = (await maestroToken.balanceOf.call(OWNER)).toNumber();
+        assert.equal(ownerBalanceBefore, OWNER_BALANCE_BEFORE);
+        
+        let memberBalanceBefore = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
+        assert.equal(memberBalanceBefore, MEMBER_BALANCE_BEFORE);
+
+        let memberLockupBefore = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        assert.equal(memberLockupBefore, MEMBER_LOCKUP_BEFORE);
+
+        await maestroToken.transferAndLock(MEMBER, VALUE);
+
+        let ownerBalanceAfter1 = (await maestroToken.balanceOf.call(OWNER)).toNumber();
+        assert.equal(ownerBalanceAfter1, OWNER_BALANCE_AFTER_1);
+        
+        let memberBalanceAfter1 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
+        assert.equal(memberBalanceAfter1, MEMBER_BALANCE_AFTER_1);
+
+        let memberLockupAfter1 = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        assert.equal(memberLockupAfter1, MEMBER_LOCKUP_AFTER_1);
+
+        await maestroToken.transferAndLock(MEMBER, VALUE);
+
+        let ownerBalanceAfter2 = (await maestroToken.balanceOf.call(OWNER)).toNumber();
+        assert.equal(ownerBalanceAfter2, OWNER_BALANCE_AFTER_2);
+        
+        let memberBalanceAfter2 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
+        assert.equal(memberBalanceAfter2, MEMBER_BALANCE_AFTER_2);
+
+        let memberLockupAfter2 = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        assert.equal(memberLockupAfter2, MEMBER_LOCKUP_AFTER_2);
+    });
+
     // TODO: Test time-dependent functions
     // TODO: Test requires
 

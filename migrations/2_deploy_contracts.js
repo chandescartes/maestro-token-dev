@@ -11,7 +11,7 @@ module.exports = function(deployer, network, accounts) {
     const wallet = accounts[2];
     const cap = 10 * (10 ** 18); // Ten ether
 
-    return deployer.deploy(MaestroToken, initialSupplyWithoutDecimals).then(function() {
+    deployer.deploy(MaestroToken, initialSupplyWithoutDecimals).then(function() {
         return deployer.deploy(MaestroCrowdsale, openingTime, closingTime, rate, wallet, cap, MaestroToken.address);
     });
 };
