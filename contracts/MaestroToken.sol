@@ -12,7 +12,7 @@ contract MaestroToken is BurnableToken, MintableToken {
 
     string public constant standard = "ERC20";
     string public constant name     = "Maestro Token";
-    string public constant symbol   = "MAS";
+    string public constant symbol   = "MAE";
     uint8 public constant decimals  = 18;
 
     uint256 public initialSupply;
@@ -250,6 +250,18 @@ contract MaestroToken is BurnableToken, MintableToken {
         else {
             assert(false);
         }
+    }
+
+    /** 
+     * Transfers and locks up an amount
+     * Used to lockup team reserve by owner
+     */
+    function transferAndLock(address _beneficiary, uint256 _amount) public onlyOwner returns (bool) {
+        transfer(_beneficiary, _amount);
+        lockupS1[_beneficiary] = lockupS1[_beneficiary].add(_amount);
+        emit Lock(_beneficiary, _amount, 1);
+
+        return true;
     }
 
     /**
