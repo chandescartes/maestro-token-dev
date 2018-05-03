@@ -1,19 +1,164 @@
 pragma solidity ^0.4.21;
 
-//import "zeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
-//import "zeppelin-solidity/contracts/crowdsale/distribution/FinalizableCrowdsale.sol";
-
+// import "./SafeMath.sol";
 import "./MaestroToken.sol";
 
 
 /**
- * Maestro Crowdsale Season #1
- * For this contract to work, balance of its address in MaestroToken must be set
+ * Maestro Crowdsale
  */
-//contract MaestroCrowdsale is Crowdsale, CappedCrowdsale, FinalizableCrowdsale {
 contract MaestroCrowdsale {
+    using SafeMath for uint256;
 
     uint8 constant public decimals = 18;
+
+    /*************************/
+    /*                       */
+    /*        Ownable        */
+    /*                       */
+    /*************************/
+
+    address public owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+
+    /*************************/
+    /*                       */
+    /*       Crowdsale       */
+    /*                       */
+    /*************************/
+
+    ERC20 public token;
+    address public wallet;
+    uint256 public rate;
+    uint256 public weiRaised;
+
+    event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+
+    function () external payable {
+        buyTokens(msg.sender);
+    }
+
+    function buyTokens(address _beneficiary) public payable {
+
+        uint256 weiAmount = msg.value;
+        _preValidatePurchase(_beneficiary, weiAmount);
+
+        // calculate token amount to be created
+        uint256 tokens = _getTokenAmount(weiAmount);
+
+        // update state
+        weiRaised = weiRaised.add(weiAmount);
+
+        _processPurchase(_beneficiary, tokens);
+        emit TokenPurchase(
+            msg.sender,
+            _beneficiary,
+            weiAmount,
+            tokens
+        );
+
+        _updatePurchasingState(_beneficiary, weiAmount);
+
+        _forwardFunds();
+        _postValidatePurchase(_beneficiary, weiAmount);
+    }
+
+    /* Overriden below
+    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
+        require(_beneficiary != address(0));
+        require(_weiAmount != 0);
+    }
+    */
+
+    function _postValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
+        // optional override
+    }
+
+    /* Not used, commented out for compilation
+    function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
+        token.transfer(_beneficiary, _tokenAmount);
+    }
+    */
+
+    /* Overriden below
+    function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
+        _deliverTokens(_beneficiary, _tokenAmount);
+    }
+    */
+
+    function _updatePurchasingState(address _beneficiary, uint256 _weiAmount) internal {
+        // optional override
+    }
+
+    function _getTokenAmount(uint256 _weiAmount) internal view returns (uint256) {
+        return _weiAmount.mul(rate);
+    }
+
+    function _forwardFunds() internal {
+        wallet.transfer(msg.value);
+    }
+
+    /*************************/
+    /*                       */
+    /*     TimedCrowdsale    */
+    /*                       */
+    /*************************/
+
+    uint256 public openingTime;
+    uint256 public closingTime;
+
+    modifier onlyWhileOpen {
+        require(block.timestamp >= openingTime && block.timestamp <= closingTime);
+        _;
+    }
+
+    function hasClosed() public view returns (bool) {
+        return block.timestamp > closingTime;
+    }
+
+    /**************************/
+    /*                        */
+    /*  FinalizableCrowdsale  */
+    /*                        */
+    /**************************/
+
+    bool public isFinalized = false;
+
+    event Finalized();
+
+    function finalize() onlyOwner public {
+        require(!isFinalized);
+        require(hasClosed());
+
+        finalization();
+        emit Finalized();
+
+        isFinalized = true;
+    }
+
+    /*************************/
+    /*                       */
+    /*    CappedCrowdsale    */
+    /*                       */
+    /*************************/
+
+    uint256 public cap;
+
+    function capReached() public view returns (bool) {
+        return weiRaised >= cap;
+    }
 
     /**
      * Constructor
@@ -31,24 +176,39 @@ contract MaestroCrowdsale {
         ERC20 _token                    // The token being sold
     )
         public
-		/* TODO
-        Crowdsale(_rate, _wallet, _token)
-        CappedCrowdsale(_cap)
-        TimedCrowdsale(_openingTime, _closingTime)
-		*/
     {
-        // TODO: Should there really be nothing here
+        /* Ownable */
+        owner = msg.sender;
+
+        /* Crowdsale */
+        require(_rate > 0);
+        require(_wallet != address(0));
+        require(_token != address(0));
+
+        rate = _rate;
+        wallet = _wallet;
+        token = _token;
+
+        /* TimedCrowdsale*/
+        require(_openingTime >= block.timestamp);
+        require(_closingTime >= _openingTime);
+
+        openingTime = _openingTime;
+        closingTime = _closingTime;
+
+        /* CappedCrowdsale */
+        require(_cap > 0);
+
+        cap = _cap;
     }
 
     /**
      * Override parent contracts to combine implementation of CappedCrowdsale and TimedCrowdsale
      */
-    //function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal onlyWhileOpen {
-    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
-		/* TODO
+    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal onlyWhileOpen {
+        require(_beneficiary != address(0));
+        require(_weiAmount != 0);
         require(weiRaised.add(_weiAmount) <= cap);
-        Crowdsale._preValidatePurchase(_beneficiary, _weiAmount);   
-		*/
     }
 
     /**
@@ -57,34 +217,15 @@ contract MaestroCrowdsale {
      * {_tokenAmount} does not include bonus
      */
     function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
-		/* TODO
         require(MaestroToken(token).buyTokensFromCrowdsale(_beneficiary, _tokenAmount));
-		*/
     }
 
     /**
      * Override from FinalizableCrowdsale to include burning of remaining tokens
      */
     function finalization() internal {
-		/* TODO
         require(MaestroToken(token).burnRemainingTokensFromCrowdsale());
-		*/
     }
-
-	//
-	// TODO: IMPLEMENT these
-	// Callbacks from MaestroToken
-	//
-    function openingTime() public returns (uint256) {
-		return 0;
-	}
-
-	function cap() public returns (uint256) {
-		return 0;
-	}
-
-	function rate() public returns (uint256) {
-	}
 
 
 }
