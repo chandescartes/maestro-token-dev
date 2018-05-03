@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/maestro-project/maestro-token-dev#readme",
   "dependencies": {
+    "truffle-hdwallet-provider": "0.0.5",
     "zeppelin-solidity": "1.8.0"
   }
 }
