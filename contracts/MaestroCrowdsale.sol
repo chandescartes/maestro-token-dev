@@ -1,6 +1,5 @@
 pragma solidity ^0.4.21;
 
-// import "./SafeMath.sol";
 import "./MaestroToken.sol";
 
 
@@ -39,7 +38,7 @@ contract MaestroCrowdsale {
     /*                       */
     /*************************/
 
-    ERC20 public token;
+    address public token;
     address public wallet;
     uint256 public rate;
     uint256 public weiRaised;
@@ -69,37 +68,7 @@ contract MaestroCrowdsale {
             tokens
         );
 
-        _updatePurchasingState(_beneficiary, weiAmount);
-
         _forwardFunds();
-        _postValidatePurchase(_beneficiary, weiAmount);
-    }
-
-    /* Overriden below
-    function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
-        require(_beneficiary != address(0));
-        require(_weiAmount != 0);
-    }
-    */
-
-    function _postValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
-        // optional override
-    }
-
-    /* Not used, commented out for compilation
-    function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        token.transfer(_beneficiary, _tokenAmount);
-    }
-    */
-
-    /* Overriden below
-    function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
-        _deliverTokens(_beneficiary, _tokenAmount);
-    }
-    */
-
-    function _updatePurchasingState(address _beneficiary, uint256 _weiAmount) internal {
-        // optional override
     }
 
     function _getTokenAmount(uint256 _weiAmount) internal view returns (uint256) {
@@ -173,14 +142,14 @@ contract MaestroCrowdsale {
         uint256 _rate,                  // How many token units a buyer gets per wei
         address _wallet,                // Address where funds are collected
         uint256 _cap,                   // Max amount of wei to be contributed
-        ERC20 _token                    // The token being sold
+        address _token                    // The token being sold
     )
         public
     {
-        /* Ownable */
+        // /* Ownable */
         owner = msg.sender;
 
-        /* Crowdsale */
+        // /* Crowdsale */
         require(_rate > 0);
         require(_wallet != address(0));
         require(_token != address(0));
@@ -189,8 +158,8 @@ contract MaestroCrowdsale {
         wallet = _wallet;
         token = _token;
 
-        /* TimedCrowdsale*/
-        require(_openingTime >= block.timestamp);
+        /* TimedCrowdsale */
+        require(_openingTime >= now);
         require(_closingTime >= _openingTime);
 
         openingTime = _openingTime;
