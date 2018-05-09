@@ -5,6 +5,7 @@ import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
 import "./MaestroCrowdsale.sol";
 
+
 /**
  * The main contract for Maestro token
  */
@@ -45,11 +46,11 @@ contract MaestroToken is BurnableToken, MintableToken {
      * TODO: add S2 logic
      */
     modifier checkLockup(address _from, uint256 _value) {
-        if (now < releaseDateS1)
+        if (now < releaseDateS1) {
             require(_value.add(lockupS1[_from]).add(lockupS2[_from]) <= balances[_from]);
-
-        else if (now < releaseDateS2)
+        } else if (now < releaseDateS2) {
             require(_value.add(lockupS2[_from]) <= balances[_from]);
+        }
 
         _;
     }
@@ -192,6 +193,9 @@ contract MaestroToken is BurnableToken, MintableToken {
      * Get crowdsale number, return 0 otherwise
      */
     function getCrowdsaleNumber(address _sender) internal view returns (uint) {
+        if (_sender == address(0))
+            return 0;
+
         if (_sender == crowdsaleS1Address)
             return 1;
 
@@ -233,21 +237,16 @@ contract MaestroToken is BurnableToken, MintableToken {
             // Add lock up and emit event
             lockupS1[_tokenHolder] = lockupS1[_tokenHolder].add(_value);
             emit Lock(_tokenHolder, _value, _crowdsaleNumber);
-        }
-
-        else if (_crowdsaleNumber == 2) {
+        } else if (_crowdsaleNumber == 2) {
             // Lockup amount cannot be more than balance
             require(lockupS1[_tokenHolder].add(lockupS2[_tokenHolder]).add(_value) <= balances[_tokenHolder]);
 
             // Add lockup and emit event
             lockupS2[_tokenHolder] = lockupS2[_tokenHolder].add(_value);
             emit Lock(_tokenHolder, _value, _crowdsaleNumber);
-        }
-
-        else if (_crowdsaleNumber == 3) {
+        } else if (_crowdsaleNumber == 3) {
             return;
-        }
-        else {
+        } else {
             assert(false);
         }
     }
@@ -258,7 +257,9 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function transferAndLock(address _beneficiary, uint256 _amount) public onlyOwner returns (bool) {
         transfer(_beneficiary, _amount);
-        lockupS1[_beneficiary] = lockupS1[_beneficiary].add(_amount);
+
+        // From Solhint: Possible reentrancy vulnerabilities. Avoid state changes after transfer
+        lockTokens(_beneficiary, _amount, 1);
         emit Lock(_beneficiary, _amount, 1);
 
         return true;
@@ -270,7 +271,7 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function buyTokensFromCrowdsale(address _beneficiary, uint256 _amount) public returns (bool) {
         uint crowdsaleNumber = getCrowdsaleNumber(msg.sender);
-        require(crowdsaleNumber != 0);
+        require(crowdsaleNumber != 0 && crowdsaleNumber < 4);
 
         uint256 bonus = calculateBonus(_amount, crowdsaleNumber);
         uint256 amountWithBonus = _amount.add(bonus);
@@ -287,7 +288,7 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function burnRemainingTokensFromCrowdsale() public returns (bool) {
         uint crowdsaleNumber = getCrowdsaleNumber(msg.sender);
-        require(crowdsaleNumber != 0);
+        require(crowdsaleNumber != 0 && crowdsaleNumber < 4);
 
         uint256 balance = balances[msg.sender];
         burn(balance);

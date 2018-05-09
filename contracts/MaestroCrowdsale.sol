@@ -9,8 +9,6 @@ import "./MaestroToken.sol";
 contract MaestroCrowdsale {
     using SafeMath for uint256;
 
-    uint8 constant public decimals = 18;
-
     /*************************/
     /*                       */
     /*        Ownable        */
@@ -107,7 +105,7 @@ contract MaestroCrowdsale {
 
     event Finalized();
 
-    function finalize() onlyOwner public {
+    function finalize() public onlyOwner {
         require(!isFinalized);
         require(hasClosed());
 
