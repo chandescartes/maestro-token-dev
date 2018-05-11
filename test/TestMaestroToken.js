@@ -4,15 +4,19 @@ contract("MaestroToken Test", async (accounts) => {
 
     const INITIAL_SUPPLY_WITHOUT_DECIMALS = 9999;
     const INITIAL_SUPPLY = INITIAL_SUPPLY_WITHOUT_DECIMALS * (10 ** 18);
+    const LOCKUP_DURATION_S1 = 180;
+    const LOCKUP_DURATION_S2 = 180;
+    const LOCKUP_DURATION_TEAM = 365;
 
     let maestroToken;
 
     beforeEach(async () => {
-        maestroToken = await MaestroToken.new(INITIAL_SUPPLY_WITHOUT_DECIMALS);
+        maestroToken = await MaestroToken.new(INITIAL_SUPPLY_WITHOUT_DECIMALS, LOCKUP_DURATION_S1, LOCKUP_DURATION_S2, LOCKUP_DURATION_TEAM);
     });
 
     it("should call constructor correctly", async () => {
-        const OWNER = accounts[0]
+        const OWNER = accounts[0];
+
         let owner = await maestroToken.owner.call();
         assert.equal(owner, OWNER);
 
@@ -24,6 +28,18 @@ contract("MaestroToken Test", async (accounts) => {
 
         let totalSupply = (await maestroToken.totalSupply.call()).toNumber();
         assert.equal(totalSupply, INITIAL_SUPPLY);
+
+        let lockupDurationS1 = (await maestroToken.lockupDurationS1.call()).toNumber();
+        assert.equal(lockupDurationS1, LOCKUP_DURATION_S1 * 60 * 60 * 24);
+
+        let lockupDurationS2 = (await maestroToken.lockupDurationS2.call()).toNumber();
+        assert.equal(lockupDurationS2, LOCKUP_DURATION_S2 * 60 * 60 * 24);
+
+        let lockupDurationTeam = (await maestroToken.lockupDurationTeam.call()).toNumber();
+        assert.equal(lockupDurationTeam, LOCKUP_DURATION_TEAM * 60 * 60 * 24);
+
+        let releaseDateTeam = (await maestroToken.releaseDateTeam.call()).toNumber();
+        console.log(releaseDateTeam);
     });
 
     it("should transfer values properly", async () => {
@@ -129,7 +145,7 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceBefore = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceBefore, MEMBER_BALANCE_BEFORE);
 
-        let memberLockupBefore = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        let memberLockupBefore = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
         assert.equal(memberLockupBefore, MEMBER_LOCKUP_BEFORE);
 
         await maestroToken.transferAndLock(MEMBER, VALUE);
@@ -140,7 +156,7 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceAfter1 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceAfter1, MEMBER_BALANCE_AFTER_1);
 
-        let memberLockupAfter1 = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        let memberLockupAfter1 = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
         assert.equal(memberLockupAfter1, MEMBER_LOCKUP_AFTER_1);
 
         await maestroToken.transferAndLock(MEMBER, VALUE);
@@ -151,7 +167,7 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceAfter2 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceAfter2, MEMBER_BALANCE_AFTER_2);
 
-        let memberLockupAfter2 = (await maestroToken.getLockupS1.call({from: MEMBER})).toNumber();
+        let memberLockupAfter2 = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
         assert.equal(memberLockupAfter2, MEMBER_LOCKUP_AFTER_2);
     });
 

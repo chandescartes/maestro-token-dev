@@ -7,6 +7,9 @@ contract("MaestroCrowdsale Test", async (accounts) => {
 
     const INITIAL_SUPPLY_WITHOUT_DECIMALS = 9999;
     const INITIAL_SUPPLY = INITIAL_SUPPLY_WITHOUT_DECIMALS * (10 ** 18);
+    const LOCKUP_DURATION_S1 = 180;
+    const LOCKUP_DURATION_S2 = 180;
+    const LOCKUP_DURATION_TEAM = 365;
 
     let LATEST;
     let OPENING_TIME;
@@ -23,7 +26,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         OPENING_TIME = await LATEST + 5;
         CLOSING_TIME = await OPENING_TIME + 60; // One minute
 
-        maestroToken = await MaestroToken.new(INITIAL_SUPPLY_WITHOUT_DECIMALS);
+        maestroToken = await MaestroToken.new(INITIAL_SUPPLY_WITHOUT_DECIMALS, LOCKUP_DURATION_S1, LOCKUP_DURATION_S2, LOCKUP_DURATION_TEAM);
         maestroCrowdsale = await MaestroCrowdsale.new(OPENING_TIME, CLOSING_TIME, RATE, WALLET, CAP, maestroToken.address);
     });
 
@@ -53,7 +56,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const OTHER = accounts[3];
         const CROWDSALE = await maestroCrowdsale.address;
 
-        const RELEASE_DATE = OPENING_TIME + (60 * 60 * 24 * 365);
+        const RELEASE_DATE = CLOSING_TIME + (60 * 60 * 24 * LOCKUP_DURATION_S1);
 
         const CROWDSALE_AMOUNT = CAP * RATE * 13 / 10;
 
@@ -148,7 +151,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         const OTHER = accounts[3];
         const CROWDSALE = await maestroCrowdsale.address;
 
-        const RELEASE_DATE = OPENING_TIME + (60 * 60 * 24 * 365);
+        const RELEASE_DATE = CLOSING_TIME + (60 * 60 * 24 * LOCKUP_DURATION_S2);
 
         const CROWDSALE_AMOUNT = CAP * RATE * 11 / 10;
 

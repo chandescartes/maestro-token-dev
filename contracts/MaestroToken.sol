@@ -24,34 +24,47 @@ contract MaestroToken is BurnableToken, MintableToken {
     uint public constant BONUS_S2 = 10;
     uint public constant BONUS_S3 = 0;
 
-    /* Crowdsale addresses */
+    /* Crowdsale addresses and flags */
     address internal crowdsaleS1Address;
     address internal crowdsaleS2Address;
     address internal crowdsaleS3Address;
+    bool public crowdsaleS1Flag = false;
+    bool public crowdsaleS2Flag = false;
+    bool public crowdsaleS3Flag = false;
 
     /* Lockup durations and release dates */
-    uint public constant LOCKUP_DURATION_S1 = 1 years;
-    uint public constant LOCKUP_DURATION_S2 = 1 years;
-    uint public releaseDateS1;
-    uint public releaseDateS2;
+    uint public lockupDurationS1;   // Unit is days
+    uint public lockupDurationS2;   // Unit is days
+    uint public lockupDurationTeam; // Unit is days
+    uint public releaseDateS1 = 0;
+    uint public releaseDateS2 = 0;
+    uint public releaseDateTeam = 0;
 
+    /* Mapping to keep track of lockup of each address */
     mapping(address => uint256) internal lockupS1;
     mapping(address => uint256) internal lockupS2;
+    mapping(address => uint256) internal lockupTeam;
 
     /* Events */
-    event Lock(address indexed _tokenHolder, uint256 _value, uint _crowdsaleNumber);
+    event Lock(address indexed _tokenHolder, uint256 _value);
 
     /**
      * Disallows transferring locked tokens
-     * TODO: add S2 logic
      */
     modifier checkLockup(address _from, uint256 _value) {
+        uint256 totalLockup = 0;
+
         if (now < releaseDateS1) {
-            require(_value.add(lockupS1[_from]).add(lockupS2[_from]) <= balances[_from]);
-        } else if (now < releaseDateS2) {
-            require(_value.add(lockupS2[_from]) <= balances[_from]);
+            totalLockup += lockupS1[_from];
+        } 
+        if (now < releaseDateS2) {
+            totalLockup += lockupS2[_from];
+        } 
+        if (now < releaseDateTeam) {
+            totalLockup += lockupTeam[_from];
         }
 
+        require(_value.add(totalLockup) <= balances[_from]);
         _;
     }
 
@@ -60,9 +73,22 @@ contract MaestroToken is BurnableToken, MintableToken {
      * Note that {_initialSupplyWithoutDecimals} is amount before multiplying by {10 ** decimals}
      * For example, if {_initialSupplyWithoutDecimals == 999} then {initialSupply == 999 * (10 ** decimals)}
      * This is so that we make sure the initial supply is divisible by {10 ** decimals}
+     * Unit of lockup duration variables is days
      */
-    function MaestroToken(uint256 _initialSupplyWithoutDecimals) public {
+    function MaestroToken(
+        uint256 _initialSupplyWithoutDecimals,
+        uint _lockupDurationS1,
+        uint _lockupDurationS2,
+        uint _lockupDurationTeam
+    ) 
+        public 
+    {
         initialSupply = _initialSupplyWithoutDecimals.mul(10 ** uint256(decimals));
+        lockupDurationS1 = (_lockupDurationS1 * 1 days);
+        lockupDurationS2 = (_lockupDurationS2 * 1 days);
+        lockupDurationTeam = (_lockupDurationTeam * 1 days);
+
+        releaseDateTeam = now + lockupDurationTeam;
 
         // In BasicToken.sol
         // Current total supply of tokens, can be increased by mint() or decreased by burn()
@@ -127,6 +153,20 @@ contract MaestroToken is BurnableToken, MintableToken {
     }
 
     /**
+     * Return lockup of team member
+     */
+    function getLockupTeam() public view returns (uint256) {
+        return lockupTeam[msg.sender];
+    }
+
+    /**
+     * Return S2 lockup of {_owner} - can only be called by owner
+     */
+    function getLockupTeamOnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+        return lockupTeam[_owner];
+    }
+
+    /**
      * Return address of CrowdsaleS1 - can only be called by owner
      */
     function getCrowdsaleS1Address() public view onlyOwner returns (address) {
@@ -153,13 +193,18 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function setCrowdsaleS1(address _address) public onlyOwner {
         require(_address != address(0));
+        require(!crowdsaleS1Flag);
 
         crowdsaleS1Address = _address;
-        releaseDateS1 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S1;
+        releaseDateS1 = MaestroCrowdsale(_address).closingTime() + lockupDurationS1;
+
         uint256 cap = MaestroCrowdsale(_address).cap();
         uint256 rate = MaestroCrowdsale(_address).rate();
         uint256 tokenAmount = cap.mul(rate).div(100).mul(BONUS_S1 + 100);
         transfer(crowdsaleS1Address, tokenAmount);
+
+        require(MaestroCrowdsale(_address).returnTrue());
+        crowdsaleS1Flag = true;
     }
 
     /**
@@ -167,13 +212,18 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function setCrowdsaleS2(address _address) public onlyOwner {
         require(_address != address(0));
+        require(!crowdsaleS2Flag);
 
         crowdsaleS2Address = _address;
-        releaseDateS2 = MaestroCrowdsale(_address).openingTime() + LOCKUP_DURATION_S2;
+        releaseDateS2 = MaestroCrowdsale(_address).closingTime() + lockupDurationS2;
+
         uint256 cap = MaestroCrowdsale(_address).cap();
         uint256 rate = MaestroCrowdsale(_address).rate();
         uint256 tokenAmount = cap.mul(rate).div(100).mul(BONUS_S2 + 100);
         transfer(crowdsaleS2Address, tokenAmount);
+
+        require(MaestroCrowdsale(_address).returnTrue());
+        crowdsaleS2Flag = true;
     }
 
     /**
@@ -181,12 +231,17 @@ contract MaestroToken is BurnableToken, MintableToken {
      */
     function setCrowdsaleS3(address _address) public onlyOwner {
         require(_address != address(0));
+        require(!crowdsaleS3Flag);
 
         crowdsaleS3Address = _address;
+
         uint256 cap = MaestroCrowdsale(_address).cap();
         uint256 rate = MaestroCrowdsale(_address).rate();
         uint256 tokenAmount = cap.mul(rate);
         transfer(crowdsaleS3Address, tokenAmount);
+
+        require(MaestroCrowdsale(_address).returnTrue());
+        crowdsaleS3Flag = true;
     }
 
     /**
@@ -228,22 +283,15 @@ contract MaestroToken is BurnableToken, MintableToken {
     /**
      * Increase amount of locked tokens of {_tokenHolder} by {_value}
      * Crowdsale number must be 1, 2, or 3
+     * Total lockup cannot be more than balance
      */
-    function lockTokens(address _tokenHolder, uint256 _value, uint _crowdsaleNumber) internal {
+    function lockTokens(address _tokenHolder, uint256 _value, uint _crowdsaleNumber) internal checkLockup(_tokenHolder, _value) {
         if (_crowdsaleNumber == 1) {
-            // Lockup amount cannot be more than balance (lockupS2 doesn't necessarily have to be checked)
-            require(lockupS1[_tokenHolder].add(lockupS2[_tokenHolder]).add(_value) <= balances[_tokenHolder]);
-
-            // Add lock up and emit event
             lockupS1[_tokenHolder] = lockupS1[_tokenHolder].add(_value);
-            emit Lock(_tokenHolder, _value, _crowdsaleNumber);
+            emit Lock(_tokenHolder, _value);
         } else if (_crowdsaleNumber == 2) {
-            // Lockup amount cannot be more than balance
-            require(lockupS1[_tokenHolder].add(lockupS2[_tokenHolder]).add(_value) <= balances[_tokenHolder]);
-
-            // Add lockup and emit event
             lockupS2[_tokenHolder] = lockupS2[_tokenHolder].add(_value);
-            emit Lock(_tokenHolder, _value, _crowdsaleNumber);
+            emit Lock(_tokenHolder, _value);
         } else if (_crowdsaleNumber == 3) {
             return;
         } else {
@@ -259,8 +307,8 @@ contract MaestroToken is BurnableToken, MintableToken {
         transfer(_beneficiary, _amount);
 
         // From Solhint: Possible reentrancy vulnerabilities. Avoid state changes after transfer
-        lockTokens(_beneficiary, _amount, 1);
-        emit Lock(_beneficiary, _amount, 1);
+        lockupTeam[_beneficiary] = lockupTeam[_beneficiary].add(_amount);
+        emit Lock(_beneficiary, _amount);
 
         return true;
     }

@@ -194,5 +194,10 @@ contract MaestroCrowdsale {
         require(MaestroToken(token).burnRemainingTokensFromCrowdsale());
     }
 
-
+    /**
+     * Called by token contract for validation
+     */
+    function returnTrue() public returns (bool) {
+        return true;
+    }
 }
