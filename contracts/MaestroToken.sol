@@ -17,17 +17,20 @@ contract MaestroToken is BurnableToken, MintableToken {
     uint8 public constant decimals  = 18;
 
     uint256 public initialSupply;
-    // {uint256 totalSupply_} is also a global variable
+    uint256 public totalTeamSupply;
+    uint256 public cumulativeTeamSupply = 0;
+    // {uint256 totalSupply_} is also a global variable called by totalSupply()
 
     /* Bonus rates */
     uint public constant BONUS_S1 = 30;
     uint public constant BONUS_S2 = 10;
     uint public constant BONUS_S3 = 0;
+    uint public constant TEAM_PERCENT = 22;
 
     /* Crowdsale addresses and flags */
-    address internal crowdsaleS1Address;
-    address internal crowdsaleS2Address;
-    address internal crowdsaleS3Address;
+    address public crowdsaleS1Address;
+    address public crowdsaleS2Address;
+    address public crowdsaleS3Address;
     bool public crowdsaleS1Flag = false;
     bool public crowdsaleS2Flag = false;
     bool public crowdsaleS3Flag = false;
@@ -84,6 +87,8 @@ contract MaestroToken is BurnableToken, MintableToken {
         public 
     {
         initialSupply = _initialSupplyWithoutDecimals.mul(10 ** uint256(decimals));
+        totalTeamSupply = initialSupply.div(100).mul(TEAM_PERCENT);
+
         lockupDurationS1 = (_lockupDurationS1 * 1 days);
         lockupDurationS2 = (_lockupDurationS2 * 1 days);
         lockupDurationTeam = (_lockupDurationTeam * 1 days);
@@ -125,69 +130,26 @@ contract MaestroToken is BurnableToken, MintableToken {
     /*************************/
 
     /**
-     * Return S1 lockup of sender
-     */
-    function getLockupS1() public view returns (uint256) {
-        return lockupS1[msg.sender];
-    }
-
-    /**
      * Return S1 lockup of {_owner} - can only be called by owner
      */
-    function getLockupS1OnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+    function getLockupS1(address _owner) public view returns (uint256) {
         return lockupS1[_owner];
     }
 
     /**
-     * Return S2 lockup of sender
-     */
-    function getLockupS2() public view returns (uint256) {
-        return lockupS2[msg.sender];
-    }
-
-    /**
      * Return S2 lockup of {_owner} - can only be called by owner
      */
-    function getLockupS2OnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+    function getLockupS2(address _owner) public view returns (uint256) {
         return lockupS2[_owner];
     }
 
     /**
-     * Return lockup of team member
-     */
-    function getLockupTeam() public view returns (uint256) {
-        return lockupTeam[msg.sender];
-    }
-
-    /**
      * Return S2 lockup of {_owner} - can only be called by owner
      */
-    function getLockupTeamOnlyOwner(address _owner) public view onlyOwner returns (uint256) {
+    function getLockupTeam(address _owner) public view returns (uint256) {
         return lockupTeam[_owner];
     }
 
-    /**
-     * Return address of CrowdsaleS1 - can only be called by owner
-     */
-    function getCrowdsaleS1Address() public view onlyOwner returns (address) {
-        return crowdsaleS1Address;
-    }
-
-    /**
-     * Return address of CrowdsaleS2 - can only be called by owner
-     */
-    function getCrowdsaleS2Address() public view onlyOwner returns (address) {
-        return crowdsaleS2Address;
-    }
-
-    /**
-     * Return address of CrowdsaleS3 - can only be called by owner
-     */
-    function getCrowdsaleS3Address() public view onlyOwner returns (address) {
-        return crowdsaleS3Address;
-    }
-
-    // TODO: What happens when we input wrong address and need to revert?
     /**
      * Set address of CrowdsaleS1
      */
@@ -299,11 +261,15 @@ contract MaestroToken is BurnableToken, MintableToken {
         }
     }
 
+
     /** 
      * Transfers and locks up an amount
      * Used to lockup team reserve by owner
      */
-    function transferAndLock(address _beneficiary, uint256 _amount) public onlyOwner returns (bool) {
+    function transferToTeam(address _beneficiary, uint256 _amount) public onlyOwner returns (bool) {
+        require(cumulativeTeamSupply.add(_amount) <= totalTeamSupply);
+        cumulativeTeamSupply = cumulativeTeamSupply.add(_amount);
+
         transfer(_beneficiary, _amount);
 
         // From Solhint: Possible reentrancy vulnerabilities. Avoid state changes after transfer

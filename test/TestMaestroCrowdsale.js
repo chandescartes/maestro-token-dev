@@ -99,7 +99,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         let walletBalanceBefore = (await web3.eth.getBalance(WALLET)).toNumber();
         assert.equal(walletBalanceBefore, WALLET_BALANCE_BEFORE);
 
-        let buyerLockupBefore = (await maestroToken.getLockupS1.call({from: BUYER})).toNumber();
+        let buyerLockupBefore = (await maestroToken.getLockupS1.call(BUYER)).toNumber();
         assert.equal(buyerLockupBefore, BUYER_LOCKUP_BEFORE);
 
         let weiRaisedBefore = (await maestroCrowdsale.weiRaised.call()).toNumber();
@@ -121,7 +121,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         let walletBalanceAfter = (await web3.eth.getBalance(WALLET)).toNumber();
         assert.equal(walletBalanceAfter, WALLET_BALANCE_AFTER);
 
-        let buyerLockupAfter = (await maestroToken.getLockupS1.call({from: BUYER})).toNumber();
+        let buyerLockupAfter = (await maestroToken.getLockupS1.call(BUYER)).toNumber();
         assert.equal(buyerLockupAfter, BUYER_LOCKUP_AFTER);
 
         let weiRaisedAfter = (await maestroCrowdsale.weiRaised.call()).toNumber();
@@ -194,7 +194,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         let walletBalanceBefore = (await web3.eth.getBalance(WALLET)).toNumber();
         assert.equal(walletBalanceBefore, WALLET_BALANCE_BEFORE);
 
-        let buyerLockupBefore = (await maestroToken.getLockupS2.call({from: BUYER})).toNumber();
+        let buyerLockupBefore = (await maestroToken.getLockupS2.call(BUYER)).toNumber();
         assert.equal(buyerLockupBefore, BUYER_LOCKUP_BEFORE);
 
         let weiRaisedBefore = (await maestroCrowdsale.weiRaised.call()).toNumber();
@@ -216,7 +216,7 @@ contract("MaestroCrowdsale Test", async (accounts) => {
         let walletBalanceAfter = (await web3.eth.getBalance(WALLET)).toNumber();
         assert.equal(walletBalanceAfter, WALLET_BALANCE_AFTER);
 
-        let buyerLockupAfter = (await maestroToken.getLockupS2.call({from: BUYER})).toNumber();
+        let buyerLockupAfter = (await maestroToken.getLockupS2.call(BUYER)).toNumber();
         assert.equal(buyerLockupAfter, BUYER_LOCKUP_AFTER);
 
         let weiRaisedAfter = (await maestroCrowdsale.weiRaised.call()).toNumber();

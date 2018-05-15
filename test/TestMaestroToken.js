@@ -145,10 +145,10 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceBefore = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceBefore, MEMBER_BALANCE_BEFORE);
 
-        let memberLockupBefore = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
+        let memberLockupBefore = (await maestroToken.getLockupTeam.call(MEMBER)).toNumber();
         assert.equal(memberLockupBefore, MEMBER_LOCKUP_BEFORE);
 
-        await maestroToken.transferAndLock(MEMBER, VALUE);
+        await maestroToken.transferToTeam(MEMBER, VALUE);
 
         let ownerBalanceAfter1 = (await maestroToken.balanceOf.call(OWNER)).toNumber();
         assert.equal(ownerBalanceAfter1, OWNER_BALANCE_AFTER_1);
@@ -156,10 +156,10 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceAfter1 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceAfter1, MEMBER_BALANCE_AFTER_1);
 
-        let memberLockupAfter1 = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
+        let memberLockupAfter1 = (await maestroToken.getLockupTeam.call(MEMBER)).toNumber();
         assert.equal(memberLockupAfter1, MEMBER_LOCKUP_AFTER_1);
 
-        await maestroToken.transferAndLock(MEMBER, VALUE);
+        await maestroToken.transferToTeam(MEMBER, VALUE);
 
         let ownerBalanceAfter2 = (await maestroToken.balanceOf.call(OWNER)).toNumber();
         assert.equal(ownerBalanceAfter2, OWNER_BALANCE_AFTER_2);
@@ -167,11 +167,8 @@ contract("MaestroToken Test", async (accounts) => {
         let memberBalanceAfter2 = (await maestroToken.balanceOf.call(MEMBER)).toNumber();
         assert.equal(memberBalanceAfter2, MEMBER_BALANCE_AFTER_2);
 
-        let memberLockupAfter2 = (await maestroToken.getLockupTeam.call({from: MEMBER})).toNumber();
+        let memberLockupAfter2 = (await maestroToken.getLockupTeam.call(MEMBER)).toNumber();
         assert.equal(memberLockupAfter2, MEMBER_LOCKUP_AFTER_2);
     });
-
-    // TODO: Test time-dependent functions
-    // TODO: Test requires
 
 });

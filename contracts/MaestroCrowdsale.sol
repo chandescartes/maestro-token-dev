@@ -144,10 +144,10 @@ contract MaestroCrowdsale {
     )
         public
     {
-        // /* Ownable */
+        /* Ownable */
         owner = msg.sender;
 
-        // /* Crowdsale */
+        /* Crowdsale */
         require(_rate > 0);
         require(_wallet != address(0));
         require(_token != address(0));
@@ -197,7 +197,7 @@ contract MaestroCrowdsale {
     /**
      * Called by token contract for validation
      */
-    function returnTrue() public returns (bool) {
+    function returnTrue() public pure returns (bool) {
         return true;
     }
 }
