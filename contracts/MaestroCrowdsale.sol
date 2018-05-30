@@ -200,4 +200,49 @@ contract MaestroCrowdsale {
     function returnTrue() public pure returns (bool) {
         return true;
     }
+
+    /*************************/
+    /*                       */
+    /*    Affiliate(by and)  */
+    /*                       */
+    /*************************/
+
+    struct Affiliate {
+        uint8 rate;
+        uint8 divider;
+        bool allowed;
+    }
+
+    mapping (address => Affiliate) affiliateWhiteList;
+
+    function addAffiliate(address affiliateAddress, uint8 _rate, uint8 _divider) public onlyOwner {
+        affiliateWhiteList[affiliateAddress] = Affiliate(_rate, _divider, true);
+    }
+
+    function removeAffiliate(address affiliateAddress) public onlyOwner {
+        affiliateWhiteList[affiliateAddress].allowed = false;
+    }
+
+    function buyTokensFromAffiliate(address affiliate) public payable {
+        uint256 weiAmount = msg.value;
+        address _beneficiary = msg.sender;
+        Affiliate storage af = affiliateWhiteList[affiliate];
+
+        require(af.allowed);
+        _preValidatePurchase(_beneficiary, weiAmount);
+
+        // calculate token amount to be created
+        uint256 tokens = _getTokenAmount(weiAmount);
+
+        // update state
+        weiRaised = weiRaised.add(weiAmount);
+
+        _processPurchase(_beneficiary, tokens);
+        emit TokenPurchase(msg.sender, _beneficiary, weiAmount, tokens);
+
+        uint256 affiliatePart = msg.value.mul(af.rate).div(af.divider);
+
+        affiliate.transfer(affiliatePart);
+        wallet.transfer(msg.value.sub(affiliatePart));
+    }
 }
