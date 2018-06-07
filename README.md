@@ -1,10 +1,12 @@
-Maestro Token Development
+# Maestro Token
 
-## Prerequisites
+<p align="center"><img src="https://da247wg27lbaq.cloudfront.net/new/logo.jpeg" width="300px"/></p>
 
-# Install Truffle
-$ npm install -g truffle
+## Token Information
 
-# Install OpenZeppelin
-$ npm install -E zeppelin-solidity
+* Name: Maestro Token
+* Symbol: MAE
+* Standard: ERC20
+* Decimals: 18
 
+For more information, please visit our [website](https://maestroproject.io/) or check out our [whitepaper](https://s3-ap-southeast-2.amazonaws.com/io.maestroproject.docs/%5BMaestro%5D+Whitepaper_en.pdf).
