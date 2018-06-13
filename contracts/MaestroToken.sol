@@ -58,13 +58,13 @@ contract MaestroToken is BurnableToken, MintableToken {
         uint256 totalLockup = 0;
 
         if (now < releaseDateS1) {
-            totalLockup += lockupS1[_from];
+            totalLockup = totalLockup.add(lockupS1[_from]);
         } 
         if (now < releaseDateS2) {
-            totalLockup += lockupS2[_from];
+            totalLockup = totalLockup.add(lockupS2[_from]);
         } 
         if (now < releaseDateTeam) {
-            totalLockup += lockupTeam[_from];
+            totalLockup = totalLockup.add(lockupTeam[_from]);
         }
 
         require(_value.add(totalLockup) <= balances[_from]);
